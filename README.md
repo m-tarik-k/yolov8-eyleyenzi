@@ -14,7 +14,7 @@ Ancak görüntü işlemedeki diğer gelişmelerle çok daha keskin, hızlı ve v
 
 ..."Haar Cascade tekniğinde ise nesne tespit etme işlemi benzer şekilde; görüntünün genellikle gri formata (grayscale) dönüştürülmesiyle başlar (model renk bilgisine ihtiyaç duymaz). Sonrasında insan eliyle belirlenmiş ve eğitim sırasında kullanılan basit dikdörtgensel özellik filtreleri (_"Haar" benzeri özellikler_) görüntü üzerinde farklı boyut ve konumlarda taranır. Bu filtreler, görüntüdeki açık-koyu geçişlerini sayısal olarak analiz ederek belirli bir objeye ait olabilecek yapısal desenleri ararlar. Tarama yapılan her bölge için hızlı hesaplama amacıyla _"integral image"_ yöntemi kullanılır ve bu bölge kademeli olarak birden fazla sınıflandırma aşamasından oluşan _‘cascade’_ yapı üzerinden geçirilir. Eğer bölge tüm aşamalardan başarıyla geçerse ilgili nesnenin bulunduğu dikdörtgensel alan olarak işaretlenerek nesne tespiti gerçekleştirilmiş olur. "... <br><br>
 
-![Kenar Karşılaştırması ile Tespit](HaarCascade_1.jpg)
+![Haar Cascade ile Tespit](HaarCascade_1.jpg)
 
 <mark>Yani kısaca sadece bir objenin kenarları değil, obje üzerindeki belirgin kısımlar da işaretlenerek objelerin tespit edilmesi daha keskin bir hale gelir (örn:yüz tespiti için burun ,göz ,ağızın da kontrol edilmesi)</mark>.<br>
 Ancak bu iki yöntemin de <mark>en büyük dezavantajlarından birisi *gerçek zamanlı olarak obje tespiti*dir, çünkü bu algoritmalar bir görseli *binbir parçaya ayırıp o parçaları teker teker elimizdeki filtrelere göre mukayese ederiz* ve bu biraz *zaman alan bir işlemdir*</mark>.<br><br>
@@ -27,7 +27,11 @@ Buraya kadar anlattıklarıma ufak bi göz gezdirdiğinizi ve OpenCV kütüphane
 Bu sayede hem zamandan önemli ölçüde tasarruf sağlar hem de objelerin üst üste örtüşmeleri daha mantıklı bir şekilde işlenerek daha "doğru" bir sonuç verir .<br><br>
 VE tabikide OpenCV gibi YOLO'da zaman ilerledikçe kuruluşundan itibaren gerek resmi gerek topluluğu(community) tarafından<sub>(YOLO'da açık kaynaklıdır.)</sub> önemli güncellemeler alarak performansı, fonksiyonalitesi vb. geliştirileren bir kütüphanedir. Ancak <mark>YOLO, OpenCV'ye göre daha az kurumsal/merkezi bir kütüphane olması sebebiyle, versiyonları OpenCV'den farklı olarak ana kaynağın üstüne inşa edilmektense v5, v6, v8, NAS <sub> _(from Super-Gradients)_ </sub>, v11 gibi versiyonlara ayrılarak geliştirilmektedir.<mark><br><br>
 
-![Kenar Karşılaştırması ile Tespit](YOLO_1.jpg)
+![YOLO algoritması ile Tespit](YOLO_2.jpg)
+
+## Çıktı Örneği:
+
+![YOLO örnek 1](YOLO_1.jpg)
 
 >... SONUÇ: Artık bu repo'da OpenCV-Python ve Ultralytics-YOLO kütüphanelerini kullanacağımı, sizin ne kasteddiğimi anladığınızı <sub><sub>varsayarak</sub></sub> rahatlıkla belirtebilirm.!
 
