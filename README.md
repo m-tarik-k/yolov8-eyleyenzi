@@ -51,7 +51,7 @@ Daha önce bahsettiğim üzere YOLO kütüphanesi görsellerdeki belirli objeler
 
 + ### Dataset hazır, peki ya şimdi ?
 
-Sonraki adım olarak bu dataset'i kullanarak seçtiğimiz YOLO modelini "eğiteceğiz"(training). <mark> Bu süreci detaylıca anlatan *Google Colab* dosyama [*buradan*]() ulaşabilirsiniz. </mark>
+Sonraki adım olarak bu dataset'i kullanarak seçtiğimiz YOLO modelini "eğiteceğiz"(training). <mark> Bu süreci detaylıca anlatan *Google Colab* dosyama [*buradan*](https://colab.research.google.com/drive/1tlNoRkuAZ_ZKK0njgpx0cqoCcopTyzV9#scrollTo=SPrP_lwuOgCB) ulaşabilirsiniz. </mark>
 
 
 
