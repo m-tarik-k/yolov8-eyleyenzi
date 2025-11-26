@@ -37,7 +37,7 @@ VE tabikide OpenCV gibi YOLO'da zaman ilerledikçe kuruluşundan itibaren gerek 
 
 ># YOLO Model Kullanımı / Eğitimi
 
-Yazılımsal olarak nasıl kullanacağımızı <mark> *projelerde* </mark> bulabilirsiniz, burada daha çok sözel ibarelerle mantığını anlatmaya çalışacağım.
+Yazılımsal süreci <mark> *"Projeler"* </mark> dosyasında bulabilirsiniz, burada daha çok sözel ibarelerle mantığını anlatmaya çalışacağım.
 
 + ### Hangi YOLO?
 
@@ -45,13 +45,13 @@ Bahsettiğim üzere gerek resmi gerek gayriresmi birçok YOLO versiyonu mevcut. 
 
 + ### Model eğitimi..? Label Studio..??
 
-Daha önce bahsettiğim üzere YOLO kütüphanesi görsellerdeki belirli objeleri tespit etmek ve sınıflandırmak için belirli bir obje sınıfı/sınıfları üzere "eğitilmiş" sanal nöron ağlarını kullanır (Nöron ağından kasıt bilgisayarın farklı görsellere adapte olabilecek şekilde belirli kalıpları matematiksel olarak saklaması~ denebilir. Aynı hafızamızın nöronların bazı elektriksel sinyalleri saklamasıyla belirli kalıpları ayırt edebilmemizi sağlaması gibi...). Mevzubahis nöron ağlarının eğitimi ise pratik olarak aslında gayet basit ancak zaman alan bir süreç. Öncelikle; nasıl bir çocuğa hangi objenin isminin ne olduğunun öğretilmesi gibi önce kendimiz elle o objeyi gösterip ismini çocuğumuza öğretmeye çalışacağız; yani baz aldığımız YOLO modeline(nöral ağ seti~) objeleri öncelikle kendimiz, elimizle(ve Label Studio aracılığıyla) bir görseldeki objelerin bulunduğu dikdörtgensel alanları belirleyerek ve o bölgedeki objenin sınıfını belirterek bir veri seti oluşturacağız.<br><br>
+Daha önce bahsettiğim üzere YOLO kütüphanesi görsellerdeki belirli objeleri tespit etmek ve sınıflandırmak için belirli bir obje sınıfı/sınıfları üzere "eğitilmiş" sanal nöron ağlarını kullanır (Nöron ağından kasıt bilgisayarın farklı görsellere adapte olabilecek şekilde belirli kalıpları matematiksel olarak saklaması~ denebilir. Aynı hafızamızın nöronların bazı elektriksel sinyalleri saklamasıyla belirli kalıpları ayırt edebilmemizi sağlaması gibi...). Mevzubahis nöron ağlarının eğitimi ise pratik olarak aslında gayet basit ancak zaman alan bir süreç. Öncelikle; nasıl bir çocuğa hangi objenin isminin ne olduğunun öğretilmesi gibi önce kendimiz elle o objeyi gösterip ismini çocuğumuza öğretmeye çalışacağız; yani baz aldığımız YOLO modeline(nöral ağ seti~) objeleri öncelikle kendimiz, elimizle(ve Label Studio aracılığıyla) bir görseldeki objelerin bulunduğu dikdörtgensel alanları belirleyerek ve o bölgedeki objenin sınıfını belirterek(annotation) bir veri seti oluşturacağız.<mark>Label Studio'nun nasıl kullanıldığına [*buradan*](https://www.youtube.com/watch?v=A0cob_f5BmM&list=PLDqcjLIsFtX3t1jqjW8BXW1EDTOczDpHH) ulaşabilirsiniz. </mark> <br><br>
 
 *Sonuç olarak* bu bahsettiğimiz veri seti dosyası genel olarak belirli sayıda görsellerden, ve o görsellerdeki objelerin koordinatları(x,y,w,h) ile sınıflarını(kedi/köpek/vazo...) belirten bir dizi .txt dosyasından oluşacak.
 
 + ### Dataset hazır, peki ya şimdi ?
 
-Sonraki adım olarak bu dataset'i kullanarak seçtiğimiz YOLO modelini "eğiteceğiz"(training). <mark> Bu süreci anlatan Google Colab dosyama [*buradan*]() ulaşabilirsiniz. </mark>
+Sonraki adım olarak bu dataset'i kullanarak seçtiğimiz YOLO modelini "eğiteceğiz"(training). <mark> Bu süreci detaylıca anlatan *Google Colab* dosyama [*buradan*]() ulaşabilirsiniz. </mark>
 
 
 
