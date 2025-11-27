@@ -36,7 +36,7 @@ def create_data_yaml(path_to_classes_txt, path_to_data_yaml):
   return
 
 # classes.txt dosya yolunu tanimla ve fonksiyonu calistir
-path_to_classes_txt = '/content/custom_data/classes.txt'
+path_to_classes_txt = '/content/dataset/classes.txt'
 path_to_data_yaml = '/content/data.yaml'
 
 create_data_yaml(path_to_classes_txt, path_to_data_yaml)
