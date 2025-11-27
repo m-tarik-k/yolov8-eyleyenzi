@@ -13,10 +13,12 @@ from pathlib import Path # Dosya yolu işlemleri
 # Görsel dosya yolunu belirle
 root = Path.cwd()
 image = root / 'Projects' / 'YuzTespiti_2' / 'Faces.webp'
-
-# YOLO modelini yükle (önceden eğitilmiş model)
-model = YOLO('yolov8s.pt') 
 image = cv2.imread(image)
+
+# YOLO modelini yükle (önceden eğitilmiş bir yolov8s modeli)
+model = root / 'YOLO_Models' / 'yolov8s.pt' 
+model = YOLO(model) 
+
 
 # Görüntüdeki objeleri modele tespit ettir
 results = model(image) # "results", tespit edilen objeler hakkında bilgi içerir
