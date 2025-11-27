@@ -1,26 +1,30 @@
 ''' 
-Yüz Tespiti
-Bu kod, OpenCV kütüphanesini kullanarak bir görüntüdeki yüzleri tespit eder ve tespit edilen yüzlerin etrafina dikdörtgen çizer.
+Yüz Tespiti 1
+Bu kod, OpenCV kütüphanesini kullanarak bir görseldeki yüzleri tespit eder ve tespit edilen yüzlerin etrafina bir dörtgen çizer.
 Eger dikkat ederseniz kullandigimiz "Cascade" siniflandiricisi(bulunmak istenen obejnin kalibi) sabittir ve önden(frontal) olmayan  
 yüzleri tespit ederken zorlanacaktir.
 ''' 
 
 import cv2 # Görüntü işleme
+from pathlib import Path # Dosya yolu işlemleri
 
 # Yüz tanıma için Haar Cascade sınıflandırıcısını yükle
 cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml' # OpenCV'nin önceden oluşturulmuş Haar Cascade modeli
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
-image = cv2.imread("//home//tariktaratas//Desktop//Projects//Python//ComputerVision//Projects//YuzTespiti_1//Faces.webp")
+# Görsel dosya yolunu belirle ve görseli aç
+root = Path.cwd()
+image = root / 'Projects' / 'YuzTespiti_1' / 'Faces.webp'
+image = cv2.imread(image)
 
-# Görüntüyü gri tonlamaya çevir
+# Görseli gri tonlamaya çevir
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 # Yüzleri tespit et
 faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)) 
 ''' 
-ScaleFactor: Görüntüyü ne kadar küçülteceğimiz(hassasiyet~), 
-minNeighbors: Tespit için gereken minimum komşu sayisi(kesinlik~), 
+ScaleFactor: Görseli işlemeden önce ne kadar küçülteceğimiz(hassasiyet~), 
+minNeighbors: Obje tespiti için gereken minimum komşu sayisi(kesinlik~), 
 minSize: Tespit edilecek yüzlerin minimum boyutu 
 '''
 
