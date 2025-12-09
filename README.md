@@ -16,8 +16,8 @@ Ancak görüntü işlemedeki diğer gelişmelerle çok daha keskin, hızlı ve v
 
 ![Haar Cascade ile Tespit](Images/README/HaarCascade_1.jpg)
 
-<mark>Yani kısaca sadece bir objenin kenarları değil, obje üzerindeki belirgin kısımlar da işaretlenerek objelerin tespit edilmesi daha keskin bir hale gelir (örn:yüz tespiti için burun ,göz ,ağızın da kontrol edilmesi)</mark>.<br>
-Ancak bu iki yöntemin de <mark>en büyük dezavantajlarından birisi *gerçek zamanlı olarak obje tespiti*dir, çünkü bu algoritmalar bir görseli *binbir parçaya ayırıp o parçaları teker teker elimizdeki filtrelere göre mukayese ederiz* ve bu biraz *zaman alan bir işlemdir*</mark>.<br><br>
+<mark>Yani kısaca sadece bir objenin kenarları değil, obje üzerindeki diğer belirgin kısımlar da işaretlenerek objelerin tespit edilmesi daha keskin bir hale getirilir (örn:yüz tespiti için burun ,göz ,ağızın da kontrol edilmesi)</mark>.<br>
+Ancak bu iki yöntemin de <mark>en büyük dezavantajlarından birisi *gerçek zamanlı olarak obje tespiti* için yetersiz olmalarıdır, çünkü bu algoritmalar bir görseli *binbir parçaya ayırıp o parçaları teker teker elimizdeki filtrelere göre mukayese eder* ve bu süreç *biraz fazla zaman alabilir*</mark>.<br><br>
 ..Ve işte işin bu kısmında YOLO <sub> _(from Ultralytics)_ </sub> kütüphanesinin görüntü işleme mekanizmaları işin içine giriyor.
 
 
