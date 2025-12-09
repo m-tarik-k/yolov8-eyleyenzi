@@ -6,11 +6,11 @@ from tqdm import tqdm
 # ARGUMANLARI OKU
 # -------------------------------
 parser = argparse.ArgumentParser()
-parser.add_argument("--datapath", required=True, help="Resim ve etiket dosyalarini içeren veri klasörünün yolu")
+parser.add_argument("--datapath", required=True, help="Resim ve etiket dosyalarini iceren veri klasorunun yolu")
 parser.add_argument("--out", default="dataset-coco", help="cikti klasoru")
-parser.add_argument("--train", type=float, default=0.7, help="Eğitim klasörüne gidecek resimlerin orani")
-parser.add_argument("--val", type=float, default=0.2, help="Doğrulama klasörüne gidecek resimlerin orani")
-parser.add_argument("--test", type=float, default=0.1, help="Test klasörüne gidecek resimlerin orani")
+parser.add_argument("--train", type=float, default=0.7, help="Egitim klasorune gidecek resimlerin orani")
+parser.add_argument("--val", type=float, default=0.2, help="Dogrulama klasorune gidecek resimlerin orani")
+parser.add_argument("--test", type=float, default=0.1, help="Test klasorune gidecek resimlerin orani")
 args = parser.parse_args()
 
 DATASET_DIR = args.datapath
@@ -60,14 +60,13 @@ def main():
 
     split_data = {
         "train": imgs[:n_train],
-        "val": imgs[n_train:n_train + n_val],
+        "valid": imgs[n_train:n_train + n_val],
         "test": imgs[n_train + n_val:]
     }
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     for s in split_data:
         os.makedirs(os.path.join(OUTPUT_DIR, s), exist_ok=True)
-    os.makedirs(os.path.join(OUTPUT_DIR, "annotations"), exist_ok=True)
 
     img_id = 0
     ann_id = 0
@@ -98,7 +97,7 @@ def main():
                 with open(lbl_path) as f:
                     for line in f:
                         p = line.strip().split()
-                        if len(p) != 5: 
+                        if len(p) != 5:
                             continue
 
                         cls = int(p[0])
@@ -118,7 +117,7 @@ def main():
 
             img_id += 1
 
-        out_json = os.path.join(OUTPUT_DIR, "annotations", f"instances_{split_name}.json")
+        out_json = os.path.join(OUTPUT_DIR, split_name, "_annotations.coco.json")
         with open(out_json, "w") as f:
             json.dump(coco, f, indent=4)
 
