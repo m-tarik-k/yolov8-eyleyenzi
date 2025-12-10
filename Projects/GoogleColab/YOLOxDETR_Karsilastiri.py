@@ -2,6 +2,7 @@ import os
 import time
 import yaml
 import tempfile
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -13,17 +14,24 @@ from rfdetr.detr import RFDETRSmall
 # ------------------------------------------------------------
 DEVICE = "cuda"
 
-IMG_DIR = "dataset1/images/"
-LBL_DIR = "dataset1/labels/"
-CLS_DIR = "dataset1/classes.txt"
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset_dir", type=str, default="/content/dataset1", help="Dataset klasoru pathi")
+parser.add_argument("--yolo_dir", type=str, default="/content/yolo.pt", help="YOLO modeli pathi")
+parser.add_argument("--detr_dir", type=str, default="/content/detr.pth", help="DETR modeli pathi")
+parser.add_argument("--output_dir", type=str, default="/content/sonuc", help="Karsilastirma sonuclarinin cikti klasoru")
 
-YOLO_MODEL_PATH = "Yolov8_TD.pt"
-RFDETR_MODEL_PATH = "RFDETR_TD.pth"
+DATA_DIR = parser.parse_args().dataset_dir
+IMG_DIR = os.path.join(DATA_DIR, "images/")
+LBL_DIR = os.path.join(DATA_DIR, "labels/")
+CLS_DIR = os.path.join(DATA_DIR, "classes.txt")
+
+YOLO_MODEL_PATH = parser.parse_args().yolo_dir
+RFDETR_MODEL_PATH = parser.parse_args().detr_dir
 
 CLASS_NAMES = []
 NUM_CLASSES = 0
 
-OUTPUT_DIR = "results/"
+OUTPUT_DIR = parser.parse_args().output_dir
 OUTPUT_TXT = os.path.join(OUTPUT_DIR, "results.txt")
 OUTPUT_PNG = os.path.join(OUTPUT_DIR, "results.png")
 
