@@ -149,9 +149,6 @@ def compute_ap(preds, gts, iou_thresh):
 # ============================================================
 print("Evaluating RF-DETR...")
 
-print("Evaluating RF-DETR...")
-
-
 rfdetr_model = load_rfdetr_model(RFDETR_MODEL_PATH, DETR_SIZE, DEVICE)
 
 rfdetr_model.custom_classes = CLASS_NAMES
