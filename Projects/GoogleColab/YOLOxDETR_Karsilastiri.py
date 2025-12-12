@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import torch
+import torch.serialization
 from ultralytics import YOLO
 import inspect
 import rfdetr.detr as rfdetr_module
@@ -73,40 +74,41 @@ def load_yolo_labels(path, img_w, img_h):
 # ------------------------------------------------------------
 
 def load_rfdetr_model(weight_path, device="cuda"):
+    # Load checkpoint WITH metadata (architecture info)
     checkpoint = torch.load(weight_path, map_location=device)
 
-    # ---- 1. Detect architecture name from checkpoint ----
-    # RF-DETR checkpoints store this under different keys depending on version
-    possible_keys = ["model_name", "arch", "architecture"]
+    # Detect architecture name
+    arch_keys = ["model_name", "arch", "architecture"]
     model_name = None
 
-    for key in possible_keys:
-        if key in checkpoint:
-            model_name = checkpoint[key].lower()
+    for k in arch_keys:
+        if k in checkpoint:
+            model_name = checkpoint[k].lower()
             break
 
     if model_name is None:
         raise RuntimeError(
-            f"Could not find architecture metadata in checkpoint. "
-            f"Available keys: {list(checkpoint.keys())}"
+            f"Could not detect RF-DETR architecture. Keys available: {list(checkpoint.keys())}"
         )
 
-    # ---- 2. Find matching class inside rfdetr dynamically ----
+    # Dynamically find available classes in rfdetr
     model_classes = {
-        cls_name.lower(): cls_obj
-        for cls_name, cls_obj in rfdetr_module.__dict__.items()
-        if inspect.isclass(cls_obj) and cls_name.lower().startswith("rfdetr")
+        name.lower(): cls
+        for name, cls in rfdetr_module.__dict__.items()
+        if inspect.isclass(cls) and name.lower().startswith("rfdetr")
     }
 
     if model_name not in model_classes:
         raise RuntimeError(
-            f"RF-DETR architecture '{model_name}' not found in rfdetr module.\n"
-            f"Available detected classes: {list(model_classes.keys())}"
+            f"Architecture '{model_name}' not found in installed RF-DETR.\n"
+            f"Available classes: {list(model_classes.keys())}"
         )
 
     ModelClass = model_classes[model_name]
 
     print(f"[INFO] Loading RF-DETR architecture: {model_name}")
+
+    # Instantiate model
     model = ModelClass(pretrain_weights=weight_path, device=device)
 
     return model
