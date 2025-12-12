@@ -11,11 +11,11 @@ from rfdetr.detr import RFDETRSmall, RFDETRMedium, RFDETRLarge
 
 
 # ------------------------------------------------------------
-# CONFIG
+# AYARLAR
 # ------------------------------------------------------------
-DEVICE = "cuda"
+DEVICE = "cuda" # GPU kullanımı için 'cuda', CPU için 'cpu'
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser() # Google Colab'dan çalıştırırken kolaylık sağlaması için argümanları kodu çalıştırırken belirlemek için
 parser.add_argument("--dataset_dir", type=str, default="/content/dataset1", help="Dataset klasoru pathi")
 parser.add_argument("--yolo_dir", type=str, default="/content/yolo.pt", help="YOLO modeli pathi")
 parser.add_argument("--detr_dir", type=str, default="/content/detr.pth", help="DETR modeli pathi")
@@ -40,7 +40,7 @@ OUTPUT_TXT = os.path.join(OUTPUT_DIR, "results.txt")
 OUTPUT_PNG = os.path.join(OUTPUT_DIR, "results.png")
 
 # ------------------------------------------------------------
-# Fetch class names and number of classes
+# Modellerin eğitiminde kullanılan sınıf isimlerini okur ve sayısını belirler
 # ------------------------------------------------------------
 
 with open(CLS_DIR, "r") as f:
@@ -48,7 +48,7 @@ with open(CLS_DIR, "r") as f:
 NUM_CLASSES = len(CLASS_NAMES)
 
 # ------------------------------------------------------------
-# Load YOLO txt annotation and convert to xyxy
+# YOLO txt annotasyonlarını DETR formatına dönüştürür
 # ------------------------------------------------------------
 def load_yolo_labels(path, img_w, img_h):
     boxes = []
@@ -70,7 +70,7 @@ def load_yolo_labels(path, img_w, img_h):
     return boxes
 
 # ------------------------------------------------------------
-# Load any RFDETR size 
+# DETR modelinin boyutunu belirler
 # ------------------------------------------------------------
 def load_rfdetr_model(weight_path, size, device="cuda"):
     size = size.lower()
@@ -88,7 +88,7 @@ def load_rfdetr_model(weight_path, size, device="cuda"):
     return model
 
 # ------------------------------------------------------------
-# Calc IoU
+# IoU hesaplar
 # ------------------------------------------------------------
 def iou(boxA, boxB):
     xA = max(boxA[0], boxB[0])
@@ -107,7 +107,7 @@ def iou(boxA, boxB):
     return inter / union
 
 # ------------------------------------------------------------
-# Calc AP 
+# AP hesaplar
 # ------------------------------------------------------------
 def compute_ap(preds, gts, iou_thresh):
     preds = sorted(preds, key=lambda x: -x[2])
@@ -145,9 +145,9 @@ def compute_ap(preds, gts, iou_thresh):
     return precision * recall
 
 # ============================================================
-# =================== RF-DETR EVALUATION =====================
+# =================== RF-DETR DEGĞERLENDİRMESİ ===============
 # ============================================================
-print("Evaluating RF-DETR...")
+print("RF-DETR modeli degerlendiriliyor...")
 
 rfdetr_model = load_rfdetr_model(RFDETR_MODEL_PATH, DETR_SIZE, DEVICE)
 
@@ -209,12 +209,12 @@ rfdetr_map50 = sum(ap50_list) / NUM_CLASSES
 rfdetr_map5095 = sum(ap5095_list) / NUM_CLASSES
 
 # ============================================================
-# ===================== YOLO EVALUATION ======================
+# ===================== YOLO DEĞERLENDİRMESİ =================
 # ============================================================
-print("Evaluating YOLO...")
+print("YOLO modeli degerlendiriliyor...")
 
 dataset_yaml = {
-    "path": os.path.abspath("dataset1"),
+    "path": DATA_DIR,
     "train": "images",
     "val": "images",
     "test": "images",
@@ -249,15 +249,15 @@ os.remove(yaml_path)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================
-# ====================== SAVE COMPARISON =====================
+# ====================== KARŞILAŞTIRMANIN KAYDEDİLMESİ =======
 # ============================================================
 with open(OUTPUT_TXT, "w") as f:
     f.write("========= MODEL COMPARISON =========\n\n")
 
     # ==========================
-    # RF-DETR RESULTS
+    # RF-DETR DEĞERLENDİRME SONUÇLARI
     # ==========================
-    f.write("=== RF-DETR RESULTS ===\n\n")
+    f.write("=== RF-DETR SONUCLARI ===\n\n")
     f.write(f"mAP50: {rfdetr_map50:.6f}\n")
     f.write(f"mAP50-95: {rfdetr_map5095:.6f}\n\n")
 
@@ -277,9 +277,9 @@ with open(OUTPUT_TXT, "w") as f:
     f.write(f"  total: {rfdetr_total:.3f}\n")
 
     # ==========================
-    # YOLO RESULTS
+    # YOLO DEĞERLENDİRME SONUÇLARI
     # ==========================
-    f.write("\n\n=== YOLO RESULTS ===\n\n")
+    f.write("\n\n=== YOLO SONUCLARI ===\n\n")
     f.write(f"mAP50: {yolo_map50:.6f}\n")
     f.write(f"mAP50-95: {yolo_map5095:.6f}\n\n")
 
@@ -288,11 +288,8 @@ with open(OUTPUT_TXT, "w") as f:
         class_name = CLASS_NAMES[i] if i < len(CLASS_NAMES) else f"Class {i}"
         f.write(f"  {class_name}: {ap:.6f}\n")
 
-    yolo_total = (
-        yolo_speed["preprocess"] +
-        yolo_speed["inference"] +
-        yolo_speed["postprocess"]
-    )
+    yolo_total = yolo_speed["preprocess"] + yolo_speed["inference"] + yolo_speed["postprocess"]
+    
 
     f.write("\nSpeed (ms):\n")
     f.write(f"  preprocess: {yolo_speed['preprocess']:.3f}\n")
@@ -301,27 +298,32 @@ with open(OUTPUT_TXT, "w") as f:
     f.write(f"  total: {yolo_total:.3f}\n")
 
     # ==========================
-    # AUTO COMPARISON
+    # KARŞILAŞTIRMA SONUÇLARI
     # ==========================
-    f.write("\n\n========= AUTO COMPARISON =========\n\n")
+    f.write("\n\n========= KARSILASTIRMA SONUCLARI =========\n\n")
 
     acc_winner = "RF-DETR" if rfdetr_map5095 > yolo_map5095 else "YOLO"
     speed_winner = "RF-DETR" if rfdetr_total < yolo_total else "YOLO"
 
-    f.write(f"Accuracy Winner (mAP50-95): {acc_winner}\n")
-    f.write(f"Speed Winner (Total Time): {speed_winner}\n\n")
+    f.write(f"Hassasiyeti en yuksek olan (mAP50-95): {acc_winner}\n")
+    f.write(f"Hizi en yuksek olan (Total Sure): {speed_winner}\n\n")
 
     if acc_winner == speed_winner:
         overall = acc_winner
     else:
         if rfdetr_map5095 > yolo_map5095 and rfdetr_total < yolo_total:
-            overall = "RF-DETR (Best Accuracy + Speed)"
+            overall = "RF-DETR (En Hassas ve Hizli)"
         elif yolo_map5095 > rfdetr_map5095 and yolo_total < rfdetr_total:
-            overall = "YOLO (Best Accuracy + Speed)"
+            overall = "YOLO (En Hassas ve Hizli)"
         else:
-            overall = "Trade-off (One is faster, one is more accurate)"
+            overall = "Trade-offlar var (Biri daha hizli, oteki daha hassas)"
 
-    f.write(f"- OVERALL WINNER: {overall}\n")
+    f.write(f"- KAZANAN: {overall}\n")
+
+
+# ============================================================
+# ====================== GRAFİKLERİN ÇİZİLMESİ ==============
+# ============================================================
 
 fig, axes = plt.subplots(3, 1, figsize=(10, 14))
 
@@ -329,7 +331,7 @@ models = ["RF-DETR", "YOLO"]
 x_models = np.arange(len(models))
 
 # ------------------------------------------------------------
-#  mAP COMPARISON
+#  mAP karşılaştırması
 # ------------------------------------------------------------
 map50_vals = [rfdetr_map50, yolo_map50]
 map5095_vals = [rfdetr_map5095, yolo_map5095]
@@ -344,7 +346,7 @@ axes[0].legend()
 axes[0].grid(True)
 
 # ------------------------------------------------------------
-#  SPEED COMPARISON
+#  Hız karşılaştırması
 # ------------------------------------------------------------
 speed_labels = ["Preprocess", "Inference", "Postprocess", "Total"]
 x_speed = np.arange(len(speed_labels))
@@ -373,7 +375,7 @@ axes[1].legend()
 axes[1].grid(True)
 
 # ------------------------------------------------------------
-#  PER-CLASS AP COMPARISON
+#  PER-CLASS AP karşılaştırması
 # ------------------------------------------------------------
 x_cls = np.arange(NUM_CLASSES)
 
@@ -387,7 +389,7 @@ axes[2].legend()
 axes[2].grid(True)
 
 # ------------------------------------------------------------
-# FINAL EXPORT
+# Sonuçların exportlanması
 # ------------------------------------------------------------
 plt.tight_layout()
 plt.savefig(OUTPUT_PNG, dpi=250)
