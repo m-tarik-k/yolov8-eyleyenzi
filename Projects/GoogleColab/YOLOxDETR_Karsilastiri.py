@@ -7,10 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import torch
-import torch.serialization
 from ultralytics import YOLO
-import inspect
-import rfdetr.detr as rfdetr_module
+from rfdetr.detr import RFDETRSmall, RFDETRMedium, RFDETRLarge
 
 
 # ------------------------------------------------------------
@@ -23,6 +21,8 @@ parser.add_argument("--dataset_dir", type=str, default="/content/dataset1", help
 parser.add_argument("--yolo_dir", type=str, default="/content/yolo.pt", help="YOLO modeli pathi")
 parser.add_argument("--detr_dir", type=str, default="/content/detr.pth", help="DETR modeli pathi")
 parser.add_argument("--output_dir", type=str, default="/content/sonuc", help="Karsilastirma sonuclarinin cikti klasoru")
+parser.add_argument("--detr_size",type=str, default="small", choices=["small", "medium", "large"], help="RF-DETR model boyutu")
+
 
 DATA_DIR = parser.parse_args().dataset_dir
 IMG_DIR = os.path.join(DATA_DIR, "images/")
@@ -72,47 +72,20 @@ def load_yolo_labels(path, img_w, img_h):
 # ------------------------------------------------------------
 # Load any RFDETR size 
 # ------------------------------------------------------------
+def load_rfdetr_model(weight_path, size, device="cuda"):
+    size = size.lower()
 
-def load_rfdetr_model(weight_path, device="cuda"):
-    # Load checkpoint WITH metadata (architecture info)
-    checkpoint = torch.load(weight_path, map_location=device)
+    if size == "small":
+        model = RFDETRSmall(pretrain_weights=weight_path, device=device)
+    elif size == "medium":
+        model = RFDETRMedium(pretrain_weights=weight_path, device=device)
+    elif size == "large":
+        model = RFDETRLarge(pretrain_weights=weight_path, device=device)
+    else:
+        raise ValueError(f"Unknown RF-DETR size: {size}")
 
-    # Detect architecture name
-    arch_keys = ["model_name", "arch", "architecture"]
-    model_name = None
-
-    for k in arch_keys:
-        if k in checkpoint:
-            model_name = checkpoint[k].lower()
-            break
-
-    if model_name is None:
-        raise RuntimeError(
-            f"Could not detect RF-DETR architecture. Keys available: {list(checkpoint.keys())}"
-        )
-
-    # Dynamically find available classes in rfdetr
-    model_classes = {
-        name.lower(): cls
-        for name, cls in rfdetr_module.__dict__.items()
-        if inspect.isclass(cls) and name.lower().startswith("rfdetr")
-    }
-
-    if model_name not in model_classes:
-        raise RuntimeError(
-            f"Architecture '{model_name}' not found in installed RF-DETR.\n"
-            f"Available classes: {list(model_classes.keys())}"
-        )
-
-    ModelClass = model_classes[model_name]
-
-    print(f"[INFO] Loading RF-DETR architecture: {model_name}")
-
-    # Instantiate model
-    model = ModelClass(pretrain_weights=weight_path, device=device)
-
+    print(f"[INFO] Loaded RF-DETR ({size})")
     return model
-
 
 # ------------------------------------------------------------
 # Calc IoU
