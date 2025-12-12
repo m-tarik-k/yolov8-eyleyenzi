@@ -6,7 +6,6 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-import torch
 from ultralytics import YOLO
 from rfdetr.detr import RFDETRSmall, RFDETRMedium, RFDETRLarge
 
@@ -31,6 +30,7 @@ CLS_DIR = os.path.join(DATA_DIR, "classes.txt")
 
 YOLO_MODEL_PATH = parser.parse_args().yolo_dir
 RFDETR_MODEL_PATH = parser.parse_args().detr_dir
+DETR_SIZE = parser.parse_args().detr_size
 
 CLASS_NAMES = []
 NUM_CLASSES = 0
@@ -149,7 +149,11 @@ def compute_ap(preds, gts, iou_thresh):
 # ============================================================
 print("Evaluating RF-DETR...")
 
-rfdetr_model = load_rfdetr_model(RFDETR_MODEL_PATH, DEVICE)
+print("Evaluating RF-DETR...")
+
+
+rfdetr_model = load_rfdetr_model(RFDETR_MODEL_PATH, DETR_SIZE, DEVICE)
+
 rfdetr_model.custom_classes = CLASS_NAMES
 
 preds = []
