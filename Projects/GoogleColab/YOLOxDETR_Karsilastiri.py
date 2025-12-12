@@ -6,8 +6,10 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+import torch
 from ultralytics import YOLO
-from rfdetr.detr import RFDETRSmall
+from rfdetr.detr import RFDETRSmall, RFDETRMedium, RFDETRLarge, RFDETRXL
+
 
 # ------------------------------------------------------------
 # CONFIG
@@ -64,6 +66,42 @@ def load_yolo_labels(path, img_w, img_h):
 
             boxes.append((int(cls), x1, y1, x2, y2))
     return boxes
+
+# ------------------------------------------------------------
+# Load any RFDETR size 
+# ------------------------------------------------------------
+def load_rfdetr_model(weight_path, device="cuda"):
+    from rfdetr import detr as rfdetr_module
+    
+    checkpoint = torch.load(weight_path, map_location=device)
+    
+    # The checkpoint contains architecture metadata
+    if "model_name" in checkpoint:
+        model_name = checkpoint["model_name"]
+    elif "arch" in checkpoint:
+        model_name = checkpoint["arch"]
+    else:
+        raise ValueError("Cannot detect RF-DETR model architecture from checkpoint.")
+    
+    model_name = model_name.lower()
+
+    # Find matching model class
+    model_classes = {
+        name.lower(): cls
+        for name, cls in rfdetr_module.__dict__.items()
+        if isinstance(cls, type) and name.lower().startswith("rfdetr")
+    }
+    
+    if model_name not in model_classes:
+        raise ValueError(f"Unknown RF-DETR model architecture: {model_name}")
+
+    ModelClass = model_classes[model_name]
+    
+    print(f"[INFO] Loading RF-DETR architecture: {model_name}")
+    model = ModelClass(pretrain_weights=weight_path, device=device)
+
+    return model
+
 
 # ------------------------------------------------------------
 # Calc IoU
@@ -127,7 +165,7 @@ def compute_ap(preds, gts, iou_thresh):
 # ============================================================
 print("Evaluating RF-DETR...")
 
-rfdetr_model = RFDETRSmall(pretrain_weights=RFDETR_MODEL_PATH, device=DEVICE)
+rfdetr_model = load_rfdetr_model(RFDETR_MODEL_PATH, DEVICE)
 rfdetr_model.custom_classes = CLASS_NAMES
 
 preds = []
