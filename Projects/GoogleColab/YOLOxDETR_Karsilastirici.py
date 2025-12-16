@@ -152,36 +152,62 @@ def compute_ap(preds, gts, iou_thresh):
 # ------------------------------------------------------------
 def compute_confusion_matrix(preds, gts, num_classes, iou_thresh=0.5):
     """
-    preds: (img, cls, conf, x1,y1,x2,y2)
-    gts:   (img, cls, x1,y1,x2,y2)
+    Standard object-detection confusion matrix with background.
+    
+    Matrix shape: (num_classes + 1, num_classes + 1)
+    Last index = background (BG)
+
+    preds: (img, cls, conf, x1, y1, x2, y2)
+    gts:   (img, cls, x1, y1, x2, y2)
     """
-    cm = np.zeros((num_classes, num_classes), dtype=np.int32)
+
+    BG = num_classes
+    cm = np.zeros((num_classes + 1, num_classes + 1), dtype=np.int32)
+
+    # Group GTs by image for speed
+    gt_by_img = defaultdict(list)
+    for gi, g in enumerate(gts):
+        gt_by_img[g[0]].append((gi, g))
+
     matched_gt = set()
 
-    for p in sorted(preds, key=lambda x: -x[2]):
-        p_img, p_cls, _, px1,py1,px2,py2 = p
-        best_iou = 0
-        best_gt = None
+    # Sort predictions by confidence (standard practice)
+    preds_sorted = sorted(preds, key=lambda x: -x[2])
 
-        for gi, g in enumerate(gts):
+    for p in preds_sorted:
+        p_img, p_cls, _, px1, py1, px2, py2 = p
+        best_iou = 0.0
+        best_gt_idx = None
+        best_gt_cls = None
+
+        for gi, g in gt_by_img.get(p_img, []):
             if gi in matched_gt:
                 continue
 
-            g_img, g_cls, gx1,gy1,gx2,gy2 = g
-            if g_img != p_img:
-                continue
+            _, g_cls, gx1, gy1, gx2, gy2 = g
+            i = iou((px1, py1, px2, py2), (gx1, gy1, gx2, gy2))
 
-            i = iou((px1,py1,px2,py2), (gx1,gy1,gx2,gy2))
             if i > best_iou:
                 best_iou = i
-                best_gt = gi
+                best_gt_idx = gi
+                best_gt_cls = g_cls
 
-        if best_gt is not None and best_iou >= iou_thresh:
-            g_cls = gts[best_gt][1]
-            cm[g_cls, p_cls] += 1
-            matched_gt.add(best_gt)
+        if best_iou >= iou_thresh:
+            # Matched GT
+            cm[best_gt_cls, p_cls] += 1
+            matched_gt.add(best_gt_idx)
+        else:
+            # False positive (prediction matched to background)
+            cm[BG, p_cls] += 1
+
+    # Any GT not matched → false negative
+    for gi, g in enumerate(gts):
+        if gi not in matched_gt:
+            _, g_cls, *_ = g
+            cm[g_cls, BG] += 1
 
     return cm
+
 
 
 # ============================================================
@@ -476,33 +502,41 @@ axes[2].grid(True)
 # ============================================================
 CM_PNG = os.path.join(OUTPUT_DIR, "confusion_matrisleri.png")
 
-fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+labels = CLASS_NAMES + ["BG"]
 
+fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+# ---------------- RF-DETR ----------------
 sns.heatmap(
     rfdetr_cm,
     annot=True,
     fmt="d",
     cmap="Blues",
-    xticklabels=CLASS_NAMES,
-    yticklabels=CLASS_NAMES,
+    xticklabels=labels,
+    yticklabels=labels,
     ax=axes[0]
 )
 axes[0].set_title("RF-DETR Confusion Matrix")
 axes[0].set_xlabel("Predicted")
 axes[0].set_ylabel("Ground Truth")
 
+# ---------------- YOLO ----------------
 sns.heatmap(
     yolo_cm,
     annot=True,
     fmt="d",
     cmap="Greens",
-    xticklabels=CLASS_NAMES,
-    yticklabels=CLASS_NAMES,
+    xticklabels=labels,
+    yticklabels=labels,
     ax=axes[1]
 )
 axes[1].set_title("YOLO Confusion Matrix")
 axes[1].set_xlabel("Predicted")
 axes[1].set_ylabel("Ground Truth")
+
+plt.tight_layout()
+plt.savefig(CM_PNG, dpi=250)
+plt.close()
 
 plt.tight_layout()
 plt.savefig(CM_PNG, dpi=250)
