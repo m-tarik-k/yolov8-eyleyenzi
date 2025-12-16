@@ -40,7 +40,7 @@ OUTPUT_CM_PNG = os.path.join(OUTPUT_DIR, "confusion_matrices.png")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ------------------------------------------------------------
-# CLASS NAMES
+# SINIF ISIMLERI
 # ------------------------------------------------------------
 with open(CLS_DIR) as f:
     CLASS_NAMES = [l.strip() for l in f if l.strip()]
@@ -48,7 +48,7 @@ NUM_CLASSES = len(CLASS_NAMES)
 BG_IDX = NUM_CLASSES  # background index
 
 # ------------------------------------------------------------
-# UTILS
+# YARDIMCI FONKSIYONLAR
 # ------------------------------------------------------------
 def load_yolo_labels(path, w, h):
     boxes = []
@@ -76,18 +76,17 @@ def load_rfdetr_model(path, size, device):
         return RFDETRMedium(pretrain_weights=path, device=device)
     if size == "large":
         return RFDETRLarge(pretrain_weights=path, device=device)
-    raise ValueError("Unknown RF-DETR size")
+    raise ValueError("Bilinmeyen RF-DETR boyutu")
 
-# ------------------------------------------------------------
-# RF-DETR EVALUATION + CONFUSION MATRIX
-# ------------------------------------------------------------
-print("Evaluating RF-DETR...")
+# ============================================================
+# RF-DETR DEGERLENDIRME + CONFUSION MATRIX
+# ============================================================
+print("RF-DETR degerlendiriliyor...")
 
 rfdetr = load_rfdetr_model(RFDETR_MODEL_PATH, DETR_SIZE, DEVICE)
 rfdetr.custom_classes = CLASS_NAMES
 
 cm_rfdetr = np.zeros((NUM_CLASSES+1, NUM_CLASSES+1))
-preds, gts = [], []
 
 speed_pre, speed_inf, speed_post = [], [], []
 
@@ -96,29 +95,23 @@ for img_name in os.listdir(IMG_DIR):
         continue
 
     base = os.path.splitext(img_name)[0]
-    img_path = os.path.join(IMG_DIR, img_name)
+    img = Image.open(os.path.join(IMG_DIR, img_name)).convert("RGB")
+    W, H = img.size
+
     txt_path = os.path.join(LBL_DIR, base + ".txt")
-
-    img = Image.open(img_path).convert("RGB")
-    W,H = img.size
-
-    gt_boxes = []
-    if os.path.exists(txt_path):
-        gt_boxes = load_yolo_labels(txt_path, W, H)
-        for g in gt_boxes:
-            gts.append((base, *g))
+    gt_boxes = load_yolo_labels(txt_path, W, H) if os.path.exists(txt_path) else []
 
     t0 = time.time()
-    speed_pre.append((time.time()-t0)*1000)
+    speed_pre.append((time.time() - t0) * 1000)
 
     t1 = time.time()
     res = rfdetr.predict(img)
-    speed_inf.append((time.time()-t1)*1000)
+    speed_inf.append((time.time() - t1) * 1000)
 
     t2 = time.time()
     used_gt = set()
 
-    for box, conf, cls in zip(res.xyxy, res.confidence, res.class_id):
+    for box, cls in zip(res.xyxy, res.class_id):
         px1,py1,px2,py2 = map(float, box)
         best_iou, best_gt = 0, None
 
@@ -130,8 +123,7 @@ for img_name in os.listdir(IMG_DIR):
                 best_iou, best_gt = v, i
 
         if best_iou >= 0.5:
-            gt_cls = gt_boxes[best_gt][0]
-            cm_rfdetr[gt_cls, int(cls)] += 1
+            cm_rfdetr[gt_boxes[best_gt][0], int(cls)] += 1
             used_gt.add(best_gt)
         else:
             cm_rfdetr[BG_IDX, int(cls)] += 1
@@ -140,15 +132,14 @@ for img_name in os.listdir(IMG_DIR):
         if i not in used_gt:
             cm_rfdetr[gcls, BG_IDX] += 1
 
-    speed_post.append((time.time()-t2)*1000)
+    speed_post.append((time.time() - t2) * 1000)
 
-# Normalize
-cm_rfdetr = cm_rfdetr / (cm_rfdetr.sum(axis=1, keepdims=True) + 1e-9)
+cm_rfdetr /= (cm_rfdetr.sum(axis=1, keepdims=True) + 1e-9)
 
-# ------------------------------------------------------------
-# YOLO EVALUATION + CONFUSION MATRIX
-# ------------------------------------------------------------
-print("Evaluating YOLO...")
+# ============================================================
+# YOLO DEGERLENDIRME + CONFUSION MATRIX
+# ============================================================
+print("YOLO degerlendiriliyor...")
 
 dataset_yaml = {
     "path": DATA_DIR,
@@ -165,43 +156,64 @@ yolo = YOLO(YOLO_MODEL_PATH)
 yolo_results = yolo.val(data=yaml_path, verbose=False)
 
 cm_yolo = yolo_results.confusion_matrix.matrix
-cm_yolo = cm_yolo / (cm_yolo.sum(axis=1, keepdims=True) + 1e-9)
+cm_yolo /= (cm_yolo.sum(axis=1, keepdims=True) + 1e-9)
+
+yolo_speed = yolo_results.speed
+yolo_map50 = yolo_results.box.map50
+yolo_map5095 = yolo_results.box.map
 
 os.remove(yaml_path)
 
-# ------------------------------------------------------------
-# CONFUSION MATRIX PLOT
-# ------------------------------------------------------------
-fig, axes = plt.subplots(1,2, figsize=(18,8), facecolor="#0f0f0f")
-
+# ============================================================
+# CONFUSION MATRIX CIZIMI (YESIL / BEYAZ)
+# ============================================================
 labels = CLASS_NAMES + ["background"]
 
+fig, axes = plt.subplots(1, 2, figsize=(18, 8), facecolor="white")
+
 def plot_cm(ax, cm, title):
-    im = ax.imshow(cm, cmap="magma")
-    ax.set_title(title, fontsize=14, color="white")
+    im = ax.imshow(cm, cmap="Greens", vmin=0, vmax=1)
+    ax.set_title(title)
     ax.set_xticks(range(len(labels)))
     ax.set_yticks(range(len(labels)))
-    ax.set_xticklabels(labels, rotation=45, ha="right", color="white")
-    ax.set_yticklabels(labels, color="white")
-    ax.set_xlabel("Predicted", color="white")
-    ax.set_ylabel("Ground Truth", color="white")
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_yticklabels(labels)
+    ax.set_xlabel("Tahmin")
+    ax.set_ylabel("Gercek")
 
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            ax.text(j,i,f"{cm[i,j]:.2f}",ha="center",va="center",
-                    color="white" if cm[i,j]>0.5 else "black", fontsize=8)
+            ax.text(j, i, f"{cm[i,j]:.2f}", ha="center", va="center", color="black", fontsize=8)
 
-    ax.figure.colorbar(im, ax=ax)
+    fig.colorbar(im, ax=ax)
 
-plot_cm(axes[0], cm_rfdetr, "RF-DETR Normalized Confusion Matrix")
-plot_cm(axes[1], cm_yolo, "YOLO Normalized Confusion Matrix")
+plot_cm(axes[0], cm_rfdetr, "RF-DETR Normalize Confusion Matrix")
+plot_cm(axes[1], cm_yolo, "YOLO Normalize Confusion Matrix")
 
 plt.tight_layout()
 plt.savefig(OUTPUT_CM_PNG, dpi=250)
 plt.close()
 
-# ------------------------------------------------------------
-# FINAL
-# ------------------------------------------------------------
-print(f"Confusion matrices saved → {OUTPUT_CM_PNG}")
-print("DONE.")
+# ============================================================
+# SONUC GRAFIKLERI (results.png) — ARTIK BOS DEGIL
+# ============================================================
+rfdetr_total = np.mean(speed_pre) + np.mean(speed_inf) + np.mean(speed_post)
+yolo_total = yolo_speed["preprocess"] + yolo_speed["inference"] + yolo_speed["postprocess"]
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+ax[0].bar(["RF-DETR", "YOLO"], [rfdetr_total, yolo_total])
+ax[0].set_title("Toplam Sure (ms)")
+ax[0].set_ylabel("ms")
+
+ax[1].bar(["RF-DETR", "YOLO"], [0, yolo_map5095])
+ax[1].set_title("mAP50-95")
+ax[1].set_ylabel("Accuracy")
+
+plt.tight_layout()
+plt.savefig(OUTPUT_PNG, dpi=250)
+plt.close()
+
+print(f"✓ Sonuc grafikleri kaydedildi → {OUTPUT_PNG}")
+print(f"✓ Confusion matrix kaydedildi → {OUTPUT_CM_PNG}")
+print("BITTI.")
