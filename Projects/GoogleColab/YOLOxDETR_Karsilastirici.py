@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from ultralytics import YOLO
 from rfdetr.detr import RFDETRSmall, RFDETRMedium, RFDETRLarge
+from collections import defaultdict
+import seaborn as sns
+
 
 
 # ------------------------------------------------------------
@@ -144,6 +147,43 @@ def compute_ap(preds, gts, iou_thresh):
 
     return precision * recall
 
+# ------------------------------------------------------------
+# Confusion matrisi hesaplar
+# ------------------------------------------------------------
+def compute_confusion_matrix(preds, gts, num_classes, iou_thresh=0.5):
+    """
+    preds: (img, cls, conf, x1,y1,x2,y2)
+    gts:   (img, cls, x1,y1,x2,y2)
+    """
+    cm = np.zeros((num_classes, num_classes), dtype=np.int32)
+    matched_gt = set()
+
+    for p in sorted(preds, key=lambda x: -x[2]):
+        p_img, p_cls, _, px1,py1,px2,py2 = p
+        best_iou = 0
+        best_gt = None
+
+        for gi, g in enumerate(gts):
+            if gi in matched_gt:
+                continue
+
+            g_img, g_cls, gx1,gy1,gx2,gy2 = g
+            if g_img != p_img:
+                continue
+
+            i = iou((px1,py1,px2,py2), (gx1,gy1,gx2,gy2))
+            if i > best_iou:
+                best_iou = i
+                best_gt = gi
+
+        if best_gt is not None and best_iou >= iou_thresh:
+            g_cls = gts[best_gt][1]
+            cm[g_cls, p_cls] += 1
+            matched_gt.add(best_gt)
+
+    return cm
+
+
 # ============================================================
 # =================== RF-DETR DEGĞERLENDİRMESİ ===============
 # ============================================================
@@ -237,6 +277,42 @@ yolo_results = yolo_results = yolo_model.val(
     name="temp",
     exist_ok=True
 )
+
+# ------------------------------------------------------------
+# YOLO predictions for confusion matrix
+# ------------------------------------------------------------
+yolo_preds = []
+yolo_gts = []
+
+for img_name in os.listdir(IMG_DIR):
+    if not img_name.lower().endswith((".jpg", ".png", ".jpeg")):
+        continue
+
+    base = os.path.splitext(img_name)[0]
+    img_path = os.path.join(IMG_DIR, img_name)
+    txt_path = os.path.join(LBL_DIR, base + ".txt")
+
+    img = Image.open(img_path).convert("RGB")
+    W, H = img.size
+
+    # GT
+    if os.path.exists(txt_path):
+        for cls, x1,y1,x2,y2 in load_yolo_labels(txt_path, W, H):
+            yolo_gts.append((base, cls, x1,y1,x2,y2))
+
+    # YOLO inference
+    results = yolo_model(img, verbose=False)[0]
+
+    if results.boxes is None:
+        continue
+
+    for b in results.boxes:
+        x1,y1,x2,y2 = b.xyxy[0].cpu().numpy()
+        cls = int(b.cls[0])
+        conf = float(b.conf[0])
+        yolo_preds.append((base, cls, conf, x1,y1,x2,y2))
+
+
 eval_time = time.time() - start_time
 
 yolo_map50 = yolo_results.box.map50
@@ -247,6 +323,13 @@ yolo_speed = yolo_results.speed
 os.remove(yaml_path)
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ------------------------------------------------------------
+# Confusion matrisleri
+# ------------------------------------------------------------
+rfdetr_cm = compute_confusion_matrix(preds, gts, NUM_CLASSES, iou_thresh=0.5)
+yolo_cm   = compute_confusion_matrix(yolo_preds, yolo_gts, NUM_CLASSES, iou_thresh=0.5)
+
 
 # ============================================================
 # ====================== KARŞILAŞTIRMANIN KAYDEDİLMESİ =======
@@ -387,6 +470,46 @@ axes[2].set_ylabel("AP (mAP50-95)")
 axes[2].set_title("Per-Class AP Comparison")
 axes[2].legend()
 axes[2].grid(True)
+
+# ============================================================
+# ================= CONFUSION MATRIS GRAFIKLERI ==============
+# ============================================================
+CM_PNG = os.path.join(OUTPUT_DIR, "confusion_matrisleri.png")
+
+fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+
+sns.heatmap(
+    rfdetr_cm,
+    annot=True,
+    fmt="d",
+    cmap="Blues",
+    xticklabels=CLASS_NAMES,
+    yticklabels=CLASS_NAMES,
+    ax=axes[0]
+)
+axes[0].set_title("RF-DETR Confusion Matrix")
+axes[0].set_xlabel("Predicted")
+axes[0].set_ylabel("Ground Truth")
+
+sns.heatmap(
+    yolo_cm,
+    annot=True,
+    fmt="d",
+    cmap="Greens",
+    xticklabels=CLASS_NAMES,
+    yticklabels=CLASS_NAMES,
+    ax=axes[1]
+)
+axes[1].set_title("YOLO Confusion Matrix")
+axes[1].set_xlabel("Predicted")
+axes[1].set_ylabel("Ground Truth")
+
+plt.tight_layout()
+plt.savefig(CM_PNG, dpi=250)
+plt.close()
+
+print(f"Confusion matrices saved → {CM_PNG}")
+
 
 # ------------------------------------------------------------
 # Sonuçların exportlanması
